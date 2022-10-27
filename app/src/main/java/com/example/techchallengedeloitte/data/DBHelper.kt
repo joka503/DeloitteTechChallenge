@@ -1,8 +1,10 @@
 package com.example.techchallengedeloitte.data
 
+import android.content.ContentValues
 import android.content.Context
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
+import com.example.techchallengedeloitte.custom.PostalCodes
 
 class DBHelper(context: Context, factory: SQLiteDatabase.CursorFactory?) : SQLiteOpenHelper(context,DATABASE_NAME, factory, DATABASE_VERSION) {
 
@@ -42,6 +44,9 @@ class DBHelper(context: Context, factory: SQLiteDatabase.CursorFactory?) : SQLit
         }
     }
 
+    /**
+     * Get number of data saved in database
+     */
     fun getNumData() : Int {
         // here we are creating a readable
         // variable of our database
@@ -51,6 +56,53 @@ class DBHelper(context: Context, factory: SQLiteDatabase.CursorFactory?) : SQLit
         // below code returns a cursor to
         // read data from the database
         return db.rawQuery("SELECT * FROM $TABLE_NAME", null).count
+    }
+
+    /**
+     * Insert all data to database
+     */
+    fun addData(listPostCodes : List<PostalCodes>) : Boolean{
+        val db = this.writableDatabase
+        db.beginTransaction()
+        try {
+            var values = ContentValues()
+            for (postalCode in listPostCodes){
+                values.put(COD_DISTRITO, postalCode.cod_distrito)
+                values.put(COD_CONCELHO, postalCode.cod_concelho)
+                values.put(COD_LOCALIDADE, postalCode.cod_localidade)
+                values.put(NOME_LOCALIDADE, postalCode.nome_localidade)
+                values.put(COD_ARTERIA, postalCode.cod_arteria)
+                values.put(TIPO_ARTERIA, postalCode.tipo_arteria)
+                values.put(PREP1, postalCode.prep1)
+                values.put(TITULO_ARTERIA, postalCode.titulo_arteria)
+                values.put(PREP2, postalCode.prep2)
+                values.put(NOME_ARTERIA, postalCode.nome_arteria)
+                values.put(LOCAL_ARTERIA, postalCode.local_arteria)
+                values.put(TROCO, postalCode.troco)
+                values.put(PORTA, postalCode.porta)
+                values.put(CLIENTE, postalCode.cliente)
+                values.put(NUM_COD_POSTAL, postalCode.num_cod_postal)
+                values.put(EXT_COD_POSTAL, postalCode.ext_cod_postal)
+                values.put(DESIG_POSTAL, postalCode.desig_postal)
+                db.insert(TABLE_NAME,null,values)
+            }
+            db.setTransactionSuccessful()
+        }
+        catch (e:java.lang.Exception){
+            db.endTransaction()
+            return false;
+        }
+        finally {
+            db.endTransaction()
+        }
+        return true;
+    }
+
+    /**
+     * Return data filtered by the user input
+     */
+    fun getData(queryString : String){
+
     }
 
     companion object{
