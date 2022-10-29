@@ -8,9 +8,7 @@ import android.os.Environment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
-import androidx.appcompat.widget.SearchView
 import androidx.fragment.app.Fragment
 import com.example.techchallengedeloitte.constants.Constants
 import com.example.techchallengedeloitte.custom.PostalCodes
@@ -54,6 +52,7 @@ class FirstFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        /**
         binding.searchView.setOnQueryTextListener(object: SearchView.OnQueryTextListener {
             override fun onQueryTextSubmit(query: String?): Boolean {
                 Toast.makeText(requireContext(), "Teste", Toast.LENGTH_SHORT).show()
@@ -65,6 +64,7 @@ class FirstFragment : Fragment() {
                 return false
             }
         })
+        **/
     }
 
     /**
@@ -129,12 +129,14 @@ class FirstFragment : Fragment() {
 
             val dm = requireActivity().getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
 
-            requireActivity().registerReceiver(
+            activity?.registerReceiver(onDownloadComplete, IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE))
+            /*requireActivity().registerReceiver(
                 onDownloadComplete,
                 IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE)
-            );
+            );*/
 
             downloadID = dm.enqueue(request)
+
         } catch (e: java.lang.Exception) {
             showAlert("Error downloading file!")
             alterView(false)

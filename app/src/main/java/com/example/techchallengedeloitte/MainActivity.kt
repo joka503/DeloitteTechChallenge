@@ -5,8 +5,8 @@ import android.content.pm.PackageManager
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.fragment.app.Fragment
 import com.example.techchallengedeloitte.databinding.ActivityMainBinding
-
 
 class MainActivity : AppCompatActivity() {
 
@@ -25,12 +25,15 @@ class MainActivity : AppCompatActivity() {
                     Manifest.permission.WRITE_EXTERNAL_STORAGE
                 )
             } == PackageManager.PERMISSION_GRANTED -> {
-                val fragment : FirstFragment = supportFragmentManager.findFragmentById(R.id.FirstFragment) as FirstFragment
-                fragment.checkData()
+                val fragment1 : Fragment? = supportFragmentManager.findFragmentById(R.id.nav_host_fragment_content_main) as Fragment?
+                val child: FirstFragment? = fragment1?.childFragmentManager?.fragments?.get(0) as FirstFragment?
+                child?.checkData()
+
             }
             shouldShowRequestPermissionRationale(Manifest.permission.WRITE_EXTERNAL_STORAGE) -> {
-                val fragment : FirstFragment = supportFragmentManager.findFragmentById(R.id.FirstFragment) as FirstFragment
-                fragment.showInContextUI()
+                val fragment1 : Fragment? = supportFragmentManager.findFragmentById(R.id.nav_host_fragment_content_main) as Fragment?
+                val child: FirstFragment? = fragment1?.childFragmentManager?.fragments?.get(0) as FirstFragment?
+                child?.showInContextUI()
             }
             else -> {
                 requestPermissions(
@@ -58,8 +61,9 @@ class MainActivity : AppCompatActivity() {
                 ) {
                     // Permission is granted. Continue the action or workflow
                     // in your app.
-                    val fragment : FirstFragment = supportFragmentManager.findFragmentById(R.id.FirstFragment) as FirstFragment
-                    fragment.checkData()
+                    val fragment1 : Fragment? = supportFragmentManager.findFragmentById(R.id.nav_host_fragment_content_main) as Fragment?
+                    val child: FirstFragment? = fragment1?.childFragmentManager?.fragments?.get(0) as FirstFragment?
+                    child?.checkData()
                 } else {
                     // Explain to the user that the feature is unavailable because
                     // the features requires a permission that the user has denied.
@@ -67,8 +71,9 @@ class MainActivity : AppCompatActivity() {
                     // system settings in an effort to convince the user to change
                     // their decision.
 
-                    val fragment : FirstFragment = supportFragmentManager.findFragmentById(R.id.FirstFragment) as FirstFragment
-                    fragment.showInContextUI()
+                    val fragment1 : Fragment? = supportFragmentManager.findFragmentById(R.id.nav_host_fragment_content_main) as Fragment?
+                    val child: FirstFragment? = fragment1?.childFragmentManager?.fragments?.get(0) as FirstFragment?
+                    child?.showInContextUI()
                 }
                 return
             }
