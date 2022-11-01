@@ -29,7 +29,9 @@ class DBHelper(context: Context, factory: SQLiteDatabase.CursorFactory?) : SQLit
                 CLIENTE + " TEXT," +
                 NUM_COD_POSTAL + " INTEGER," +
                 EXT_COD_POSTAL + " INTEGER," +
-                DESIG_POSTAL + " TEXT" + ")")
+                DESIG_POSTAL + " TEXT," +
+                SEARCH_TEXT + " TEXT" +
+                ")")
 
         // we are calling sqlite
         // method for executing our query
@@ -84,6 +86,7 @@ class DBHelper(context: Context, factory: SQLiteDatabase.CursorFactory?) : SQLit
                 values.put(NUM_COD_POSTAL, postalCode.num_cod_postal)
                 values.put(EXT_COD_POSTAL, postalCode.ext_cod_postal)
                 values.put(DESIG_POSTAL, postalCode.desig_postal)
+                values.put(SEARCH_TEXT, postalCode.search_text)
                 db.insert(TABLE_NAME,null,values)
             }
             db.setTransactionSuccessful()
@@ -102,6 +105,7 @@ class DBHelper(context: Context, factory: SQLiteDatabase.CursorFactory?) : SQLit
      * Return data filtered by the user input
      */
     fun getData(queryString : String){
+        val db = this.readableDatabase
 
     }
 
@@ -113,7 +117,7 @@ class DBHelper(context: Context, factory: SQLiteDatabase.CursorFactory?) : SQLit
         //region Data
 
         private val DATABASE_NAME = "TECH_CHALLENGE_DB"
-        private val DATABASE_VERSION = 1
+        private val DATABASE_VERSION = 3
         val TABLE_NAME = "postcodes"
 
         //endregion
@@ -138,6 +142,7 @@ class DBHelper(context: Context, factory: SQLiteDatabase.CursorFactory?) : SQLit
         val NUM_COD_POSTAL = "num_cod_postal"
         val EXT_COD_POSTAL = "ext_cod_postal"
         val DESIG_POSTAL = "desig_postal"
+        val SEARCH_TEXT = "search_text"
 
         //endregion
 

@@ -17,5 +17,6 @@ data class PostalCodes(
     val cliente : String,
     val num_cod_postal : Int,
     val ext_cod_postal : Int,
-    val desig_postal : String
+    val desig_postal : String,
+    val search_text : String
     ) {}

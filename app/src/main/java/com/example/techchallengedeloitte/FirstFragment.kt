@@ -162,10 +162,11 @@ class FirstFragment : Fragment() {
 
                 // To ignore the file header
                 if (item[0] != "cod_distrito") {
+                    val searchString : String = item[3].lowercase() + " " + item[16].lowercase() + " " + item[14] + " " + item[15]
                     val postalCode = PostalCodes(
                         item[0].toInt(), item[1].toInt(), item[2].toInt(), item[3],
                         item[4], item[5], item[6], item[7], item[8], item[9], item[10], item[11],
-                        item[12], item[13], item[14].toInt(), item[15].toInt(), item[16]
+                        item[12], item[13], item[14].toInt(), item[15].toInt(), item[16], changeQueryString(searchString)
                     )
 
                     listPostalCodes += postalCode
@@ -184,6 +185,32 @@ class FirstFragment : Fragment() {
         } finally {
             alterView(false)
         }
+    }
+
+    /**
+     * Replace all special characters
+     */
+    private fun changeQueryString(stringQuery : String) : String{
+        var stringFinal : String = ""
+        try {
+            stringFinal = stringQuery
+                .replace("ã","a")
+                .replace("ç","c")
+                .replace("á","a")
+                .replace("à","a")
+                .replace("ó","o")
+                .replace("ò","o")
+                .replace("é","e")
+                .replace("è","e")
+                .replace("ì","i")
+                .replace("í","i")
+                .replace("ú","u")
+                .replace("ù","u")
+        }
+        catch (e: java.lang.Exception){
+            return ""
+        }
+        return stringFinal
     }
 
     /**
