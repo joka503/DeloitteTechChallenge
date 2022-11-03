@@ -9,8 +9,10 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.appcompat.app.AlertDialog
+import androidx.appcompat.widget.SearchView
 import androidx.fragment.app.Fragment
 import com.example.techchallengedeloitte.constants.Constants
+import com.example.techchallengedeloitte.custom.CustomListViewAdapter
 import com.example.techchallengedeloitte.custom.PostalCodes
 import com.example.techchallengedeloitte.data.DBHelper
 import com.example.techchallengedeloitte.databinding.FragmentFirstBinding
@@ -52,19 +54,25 @@ class FirstFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        /**
-        binding.searchView.setOnQueryTextListener(object: SearchView.OnQueryTextListener {
+        binding.searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener,
+            android.widget.SearchView.OnQueryTextListener {
             override fun onQueryTextSubmit(query: String?): Boolean {
-                Toast.makeText(requireContext(), "Teste", Toast.LENGTH_SHORT).show()
+                if (query != null) {
+                    val finalString = changeQueryString(query.lowercase().replace(" ","* "))
+                    getDataFromDatabase(finalString)
+                }
                 return false
             }
 
             override fun onQueryTextChange(newText: String?): Boolean {
-                Toast.makeText(requireContext(), "Teste", Toast.LENGTH_SHORT).show()
+                if (newText == null || newText.isEmpty()) {
+                    requireActivity().runOnUiThread() {
+                        binding.listviewPostCodes.adapter = null
+                    }
+                }
                 return false
             }
         })
-        **/
     }
 
     /**
@@ -76,7 +84,8 @@ class FirstFragment : Fragment() {
 
                 it.setMessage("The app needs access to the device storage to save data!")
 
-                    .setPositiveButton("Accept", DialogInterface.OnClickListener() { dialog, _ -> dialog.cancel()
+                    .setPositiveButton("Accept", DialogInterface.OnClickListener() { dialog, _ ->
+                        dialog.cancel()
                     })
 
                     .setNegativeButton("Deny", DialogInterface.OnClickListener() { dialog, _ ->
@@ -116,26 +125,32 @@ class FirstFragment : Fragment() {
     private fun downloadFile() {
         try {
             alterView(true)
-
-            val request = DownloadManager.Request(Uri.parse(Constants.PostalCodesFile))
-                .setTitle("Postal Codes")
-                .setDescription("Downloading Postal Codes file....")
-                .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
-                .setAllowedOverMetered(true)
-                .setDestinationInExternalPublicDir(
-                    Environment.DIRECTORY_DOWNLOADS,
-                    File.separator + "PostalCodes.csv"
-                )
-
-            val dm = requireActivity().getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
-
-            activity?.registerReceiver(onDownloadComplete, IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE))
-            /*requireActivity().registerReceiver(
+            activity?.registerReceiver(
                 onDownloadComplete,
                 IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE)
-            );*/
+            )
 
-            downloadID = dm.enqueue(request)
+            Thread {
+                try {
+                    val request = DownloadManager.Request(Uri.parse(Constants.PostalCodesFile))
+                        .setTitle("Postal Codes")
+                        .setDescription("Downloading Postal Codes file....")
+                        .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
+                        .setAllowedOverMetered(true)
+                        .setDestinationInExternalPublicDir(
+                            Environment.DIRECTORY_DOWNLOADS,
+                            File.separator + "PostalCodes.csv"
+                        )
+
+                    val dm =
+                        requireActivity().getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
+
+                    downloadID = dm.enqueue(request)
+
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }.start()
 
         } catch (e: java.lang.Exception) {
             showAlert("Error downloading file!")
@@ -150,36 +165,57 @@ class FirstFragment : Fragment() {
         try {
             alterView(true)
 
-            val file = File(
-                Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).path + File.separator +
-                        "PostalCodes.csv"
-            )
-            val rows: List<List<String>> = csvReader().readAll(file)
-
-            var listPostalCodes = listOf<PostalCodes>()
-
-            for (item in rows) {
-
-                // To ignore the file header
-                if (item[0] != "cod_distrito") {
-                    val searchString : String = item[3].lowercase() + " " + item[16].lowercase() + " " + item[14] + " " + item[15]
-                    val postalCode = PostalCodes(
-                        item[0].toInt(), item[1].toInt(), item[2].toInt(), item[3],
-                        item[4], item[5], item[6], item[7], item[8], item[9], item[10], item[11],
-                        item[12], item[13], item[14].toInt(), item[15].toInt(), item[16], changeQueryString(searchString)
+            Thread {
+                try {
+                    val file = File(
+                        Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).path + File.separator +
+                                "PostalCodes.csv"
                     )
+                    val rows = csvReader().readAll(file)
 
-                    listPostalCodes += postalCode
+                    var listPostalCodes = arrayListOf<PostalCodes>()
+
+                    for (item in rows) {
+                        // To ignore the file header
+                        if (item[0] != "cod_distrito") {
+                            val searchString: String =
+                                item[3].lowercase() + " " + item[16].lowercase() + " " + item[14] + " " + item[15]
+                            val postalCode = PostalCodes(
+                                item[3],
+                                item[14].toInt(),
+                                item[15].toInt(),
+                                item[16],
+                                changeQueryString(searchString)
+                            )
+                            listPostalCodes += postalCode
+
+                            if (listPostalCodes.count() > 1000) {
+                                val result =
+                                    DBHelper(requireContext(), null).addData(listPostalCodes)
+                                if (result) {
+                                    listPostalCodes.clear()
+                                }
+                            }
+                        }
+                    }
+
+                    if (listPostalCodes.isNotEmpty()) {
+                        val result = DBHelper(requireContext(), null).addData(listPostalCodes)
+                        if (result) {
+                            showAlert("Data saved! \n The app is ready for search.")
+                        } else {
+                            showAlert("Error saving the data from the file!")
+                        }
+                    }
+
+                    listPostalCodes.clear()
+
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    showAlert("Error saving the data from the file!")
                 }
-            }
+            }.start()
 
-            val result = DBHelper(requireContext(),null).addData(listPostalCodes)
-            if (result){
-                showAlert("Data saved! \n The app is ready for search.")
-            }
-            else{
-                showAlert("Error saving the data from the file!")
-            }
         } catch (e: java.lang.Exception) {
             showAlert("Error loading file!")
         } finally {
@@ -190,24 +226,23 @@ class FirstFragment : Fragment() {
     /**
      * Replace all special characters
      */
-    private fun changeQueryString(stringQuery : String) : String{
-        var stringFinal : String = ""
+    private fun changeQueryString(stringQuery: String): String {
+        var stringFinal: String = ""
         try {
             stringFinal = stringQuery
-                .replace("ã","a")
-                .replace("ç","c")
-                .replace("á","a")
-                .replace("à","a")
-                .replace("ó","o")
-                .replace("ò","o")
-                .replace("é","e")
-                .replace("è","e")
-                .replace("ì","i")
-                .replace("í","i")
-                .replace("ú","u")
-                .replace("ù","u")
-        }
-        catch (e: java.lang.Exception){
+                .replace("ã", "a")
+                .replace("ç", "c")
+                .replace("á", "a")
+                .replace("à", "a")
+                .replace("ó", "o")
+                .replace("ò", "o")
+                .replace("é", "e")
+                .replace("è", "e")
+                .replace("ì", "i")
+                .replace("í", "i")
+                .replace("ú", "u")
+                .replace("ù", "u")
+        } catch (e: java.lang.Exception) {
             return ""
         }
         return stringFinal
@@ -226,30 +261,53 @@ class FirstFragment : Fragment() {
                     })
             }
         }
-        val alert = dialogBuilder?.create()
-        alert?.setTitle("Alert")
-        alert?.show()
+        requireActivity().runOnUiThread() {
+            val alert = dialogBuilder?.create()
+            alert?.setTitle("Alert")
+            alert?.show()
+        }
     }
 
     /**
      * Show or hide different layout elements
      */
-    private fun alterView(change : Boolean){
-        if(change){
-            requireActivity().runOnUiThread(){
-                binding.progressBarDownload.visibility = View.VISIBLE
-                binding.textDescriptionDownload.visibility = View.VISIBLE
-                binding.listviewPostCodes.visibility = View.GONE
-                binding.searchView.visibility = View.GONE
-            }
+    private fun alterView(change: Boolean) {
+        if (change) {
+            if (binding.progressBarDownload.visibility == View.GONE)
+                requireActivity().runOnUiThread() {
+                    binding.progressBarDownload.visibility = View.VISIBLE
+                    binding.textDescriptionDownload.visibility = View.VISIBLE
+                    binding.listviewPostCodes.visibility = View.GONE
+                    binding.searchView.visibility = View.GONE
+                }
+        } else {
+            if (binding.progressBarDownload.visibility == View.VISIBLE)
+                requireActivity().runOnUiThread() {
+                    binding.progressBarDownload.visibility = View.GONE
+                    binding.textDescriptionDownload.visibility = View.GONE
+                    binding.listviewPostCodes.visibility = View.VISIBLE
+                    binding.searchView.visibility = View.VISIBLE
+                }
         }
-        else{
-            requireActivity().runOnUiThread(){
-                binding.progressBarDownload.visibility = View.GONE
-                binding.textDescriptionDownload.visibility = View.GONE
-                binding.listviewPostCodes.visibility = View.VISIBLE
-                binding.searchView.visibility = View.VISIBLE
-            }
+    }
+
+    /**
+     * Obtain data from database
+     */
+    private fun getDataFromDatabase(query: String) {
+        try {
+            Thread {
+                val db = DBHelper(requireContext(), null)
+                var list = db.getData(query)
+                if (list != null) {
+                    val adapter = CustomListViewAdapter(requireActivity(), list)
+                    requireActivity().runOnUiThread() {
+                        binding.listviewPostCodes.adapter = adapter
+                    }
+                }
+            }.start()
+        } catch (e: java.lang.Exception) {
+            showAlert("Error obtaining data from database!")
         }
     }
 

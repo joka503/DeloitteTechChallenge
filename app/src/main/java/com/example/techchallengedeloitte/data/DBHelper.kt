@@ -9,9 +9,8 @@ import com.example.techchallengedeloitte.custom.PostalCodes
 class DBHelper(context: Context, factory: SQLiteDatabase.CursorFactory?) : SQLiteOpenHelper(context,DATABASE_NAME, factory, DATABASE_VERSION) {
 
     override fun onCreate(db: SQLiteDatabase) {
-        // below is a sqlite query, where column names
-        // along with their data types is given
-        val query = ("CREATE TABLE " + TABLE_NAME + " ("
+
+        /*val query = ("CREATE TABLE " + TABLE_NAME + " ("
                 + ID_COL + " INTEGER PRIMARY KEY, " +
                 COD_DISTRITO + " INTEGER," +
                 COD_CONCELHO + " INTEGER," +
@@ -33,15 +32,24 @@ class DBHelper(context: Context, factory: SQLiteDatabase.CursorFactory?) : SQLit
                 SEARCH_TEXT + " TEXT" +
                 ")")
 
-        // we are calling sqlite
-        // method for executing our query
-        db.execSQL(query)
+        db.execSQL(query)*/
+
+        val queryVirtual = ("CREATE VIRTUAL TABLE " + TABLE_NAME_VIRTUAL + " USING fts3("
+                +NOME_LOCALIDADE + " TEXT," +
+                NUM_COD_POSTAL + " INTEGER," +
+                EXT_COD_POSTAL + " INTEGER," +
+                DESIG_POSTAL + " TEXT," +
+                SEARCH_TEXT + " TEXT" +
+                ")")
+
+        db.execSQL(queryVirtual)
     }
 
     override fun onUpgrade(p0: SQLiteDatabase?, p1: Int, p2: Int) {
         // this method is to check if table already exists
         if (p0 != null) {
-            p0.execSQL("DROP TABLE IF EXISTS " + "POSTCODES")
+            /**p0.execSQL("DROP TABLE IF EXISTS $TABLE_NAME")**/
+            p0.execSQL("DROP TABLE IF EXISTS $TABLE_NAME_VIRTUAL")
             onCreate(p0)
         }
     }
@@ -57,7 +65,7 @@ class DBHelper(context: Context, factory: SQLiteDatabase.CursorFactory?) : SQLit
 
         // below code returns a cursor to
         // read data from the database
-        return db.rawQuery("SELECT * FROM $TABLE_NAME", null).count
+        return db.rawQuery("SELECT * FROM $TABLE_NAME_VIRTUAL", null).count
     }
 
     /**
@@ -67,8 +75,9 @@ class DBHelper(context: Context, factory: SQLiteDatabase.CursorFactory?) : SQLit
         val db = this.writableDatabase
         db.beginTransaction()
         try {
-            var values = ContentValues()
             for (postalCode in listPostCodes){
+                var valuesVirtual = ContentValues()
+                /*var values = ContentValues()
                 values.put(COD_DISTRITO, postalCode.cod_distrito)
                 values.put(COD_CONCELHO, postalCode.cod_concelho)
                 values.put(COD_LOCALIDADE, postalCode.cod_localidade)
@@ -87,7 +96,14 @@ class DBHelper(context: Context, factory: SQLiteDatabase.CursorFactory?) : SQLit
                 values.put(EXT_COD_POSTAL, postalCode.ext_cod_postal)
                 values.put(DESIG_POSTAL, postalCode.desig_postal)
                 values.put(SEARCH_TEXT, postalCode.search_text)
-                db.insert(TABLE_NAME,null,values)
+                db.insert(TABLE_NAME,null,values)*/
+
+                valuesVirtual.put(NOME_LOCALIDADE, postalCode.nome_localidade)
+                valuesVirtual.put(NUM_COD_POSTAL, postalCode.num_cod_postal)
+                valuesVirtual.put(EXT_COD_POSTAL, postalCode.ext_cod_postal)
+                valuesVirtual.put(DESIG_POSTAL, postalCode.desig_postal)
+                valuesVirtual.put(SEARCH_TEXT, postalCode.search_text)
+                db.insert(TABLE_NAME_VIRTUAL,null,valuesVirtual)
             }
             db.setTransactionSuccessful()
         }
@@ -104,9 +120,28 @@ class DBHelper(context: Context, factory: SQLiteDatabase.CursorFactory?) : SQLit
     /**
      * Return data filtered by the user input
      */
-    fun getData(queryString : String){
+    fun getData(queryString : String) : List<PostalCodes>?{
         val db = this.readableDatabase
+        var cursor = db.rawQuery("SELECT * FROM $TABLE_NAME_VIRTUAL WHERE $SEARCH_TEXT MATCH '$queryString'",null)
+        if (cursor.moveToFirst()) {
+            var listReturn : List<PostalCodes> = listOf<PostalCodes>()
+            do{
+                var postalCode = PostalCodes(
+                    cursor.getString(0),
+                    cursor.getInt(1),
+                    cursor.getInt(2),
+                    cursor.getString(3),
+                    cursor.getString(4))
 
+                listReturn+=postalCode
+            }
+                while(cursor.moveToNext())
+
+                return listReturn
+        }
+        else{
+            return null
+        }
     }
 
     companion object{
@@ -117,8 +152,9 @@ class DBHelper(context: Context, factory: SQLiteDatabase.CursorFactory?) : SQLit
         //region Data
 
         private val DATABASE_NAME = "TECH_CHALLENGE_DB"
-        private val DATABASE_VERSION = 3
+        private val DATABASE_VERSION = 1
         val TABLE_NAME = "postcodes"
+        val TABLE_NAME_VIRTUAL = "postcodes_virtual"
 
         //endregion
 
