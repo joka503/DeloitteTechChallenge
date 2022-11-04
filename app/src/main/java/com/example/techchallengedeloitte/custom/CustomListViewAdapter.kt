@@ -17,12 +17,12 @@ class CustomListViewAdapter(
         val rowView = inflater.inflate(R.layout.row_item, null, true)
 
         val postalCodeTextView = rowView.findViewById(R.id.textViewPostalCode) as TextView
+        val locationTextView = rowView.findViewById(R.id.textViewLocation) as TextView
         val resultString =
             postCodes[position].num_cod_postal.toString() + "-" +
-                    postCodes[position].ext_cod_postal.toString() + " - " +
-                    postCodes[position].nome_localidade + ", " +
-                    postCodes[position].desig_postal
+                    postCodes[position].ext_cod_postal.toString()
         postalCodeTextView.text = resultString
+        locationTextView.text = postCodes[position].desig_postal
 
         return rowView
     }

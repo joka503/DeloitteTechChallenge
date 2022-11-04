@@ -11,5 +11,6 @@
     <string name="hello_second_fragment">Hello second fragment. Arg: %1$s</string>
     <string name="downloadDescription">Downloading file...</string>
     <string name="searchHint">Search here...</string>
+    <string name="fileLoading">Loading file information...</string>
 
 </resources>

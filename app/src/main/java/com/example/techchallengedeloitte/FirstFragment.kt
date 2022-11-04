@@ -26,16 +26,11 @@ import java.io.File
 class FirstFragment : Fragment() {
 
     private var _binding: FragmentFirstBinding? = null
-
-    // This property is only valid between onCreateView and
-    // onDestroyView.
     private val binding get() = _binding!!
     private var downloadID: Long = 0
     private val onDownloadComplete: BroadcastReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent) {
-            //Fetching the download id received with the broadcast
             val id = intent.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, -1)
-            //Checking if the received broadcast is for our enqueued download by matching download id
             if (downloadID === id) {
                 fileDownloaded()
             }
@@ -163,7 +158,11 @@ class FirstFragment : Fragment() {
      */
     private fun fileDownloaded() {
         try {
-            alterView(true)
+            //alterView(true)
+
+            requireActivity().runOnUiThread(){
+                binding.textDescriptionDownload.text = getString(R.string.fileLoading)
+            }
 
             Thread {
                 try {
@@ -209,16 +208,17 @@ class FirstFragment : Fragment() {
                     }
 
                     listPostalCodes.clear()
+                    alterView(false)
 
                 } catch (e: Exception) {
                     e.printStackTrace()
                     showAlert("Error saving the data from the file!")
+                    alterView(false)
                 }
             }.start()
 
         } catch (e: java.lang.Exception) {
             showAlert("Error loading file!")
-        } finally {
             alterView(false)
         }
     }
